@@ -260,7 +260,7 @@ messageHandlers.set(MessageType.REQUEST_TO, (msg, from, room) => {
 messageHandlers.set(MessageType.PARTICIPANT_LEFT, (msg, from, room) => {
   //  console.log(`${JSON.stringify(msg)}`)
   let pids = JSON.parse(msg.v) as string[]
-  if (!msg.v || pids === []){ pids = [from.id] }
+  if (!msg.v || pids.length === 0){ pids = [from.id] }
   for(const pid of pids){
     const participant = room.participantsMap.get(pid)
     if (participant && !participant.socket.isClosed){
@@ -347,6 +347,11 @@ async function handleWs(sock: WebSocket) {
             //  create room and participant
             room = rooms.get(msg.r)
             participant = room.getParticipant(msg.p, sock)
+            if (participant.socket !== sock){
+              console.log(`Remove old participant with the same id '${participant.id}'.`)
+              room.onParticipantLeft(participant)
+              participant = room.getParticipant(msg.p, sock)
+            }
             rooms.sockMap.set(sock, {room, participant})
             console.log(`Participant ${participant.id} joined. ${room.participants.length} people in "${room.id}".`)
           }else{
